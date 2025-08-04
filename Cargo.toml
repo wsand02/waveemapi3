@@ -1,0 +1,11 @@
+[package]
+name = "waveemapi3"
+version = "0.1.0"
+edition = "2024"
+license = "LGPL-3.0"
+
+[dependencies]
+rocket = { version = "0.5.1", features = ["json"] }
+serde = "1.0.219"
+mp3lame-encoder = "0.2.1"
+hound = "3.5.1"
