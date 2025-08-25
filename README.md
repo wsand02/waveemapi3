@@ -24,3 +24,16 @@ Set the `WAVEEMAPI_TOKEN` (environment variable) to whatever you want.
 
 ### File limit
 Remove the `.example` from the `Rocket.toml.example` and change it to your liking.
+
+## API Routes
+
+### `(GET) /status/api`
+
+Returns a simple JSON status response.
+
+### `(POST) /status/upload`
+
+Accepts a multipart form upload:
++ wav: The WAV file to convert.
++ Requires an `x-api-key` header matching `WAVEEMAPI_TOKEN`.
+
