@@ -5,6 +5,9 @@ use std::io::Read;
 pub fn wav_decode<R: Read>(mut reader: WavReader<R>) -> Result<(Vec<f32>, Vec<f32>), WavError> {
     let channels = reader.spec().channels as usize;
     let bit_depth = reader.spec().bits_per_sample;
+    if channels != 1 && channels != 2 {
+        return Err(WavError::HoundError(hound::Error::Unsupported));
+    }
 
     let decode_result = match bit_depth {
         16 => process_samples(reader.samples::<i16>(), channels, 1.0 / 32768.0).map_err(|e| e)?,
