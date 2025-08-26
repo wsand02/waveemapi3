@@ -9,3 +9,7 @@ rocket = { version = "0.5.1", features = ["json"] }
 serde = "1.0.219"
 mp3lame-encoder = "0.2.1"
 hound = "3.5.1"
+
+[profile.profiling]
+inherits = "release"
+debug = true
