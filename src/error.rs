@@ -1,12 +1,11 @@
 use core::fmt;
 use hound::Error as HoundError;
-use mp3lame_encoder::{BuildError, EncodeError, Id3TagError};
+use mp3lame_encoder::{BuildError, EncodeError};
 
 #[derive(Debug)]
 pub enum Mp3Error {
     EncoderError(EncodeError),
     BuildError(BuildError),
-    Id3TagError(Id3TagError),
 }
 
 impl fmt::Display for Mp3Error {
@@ -14,7 +13,6 @@ impl fmt::Display for Mp3Error {
         match self {
             Mp3Error::EncoderError(e) => write!(f, "Encoder error: {}", e),
             Mp3Error::BuildError(e) => write!(f, "Build error: {}", e),
-            Mp3Error::Id3TagError(e) => write!(f, "Id3Tag error: {:?}", e),
         }
     }
 }
