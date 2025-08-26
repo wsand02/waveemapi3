@@ -42,6 +42,8 @@ async fn upload(
             }),
         )
     })?;
+    let sample_rate = reader.spec().sample_rate as u32;
+    let channels = reader.spec().channels as u8;
 
     let (left, right) = match wav_decode(reader) {
         Ok(data) => data,
@@ -61,7 +63,7 @@ async fn upload(
         }
     };
 
-    let encoder_result = mp3_encode(&left, &right);
+    let encoder_result = mp3_encode(&left, &right, channels, sample_rate);
     let mp3_data = match encoder_result {
         Ok(data) => data,
         Err(e) => {

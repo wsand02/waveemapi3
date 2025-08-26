@@ -2,9 +2,12 @@ use crate::error::Mp3Error;
 use mp3lame_encoder::{BuildError, Builder, DualPcm, Encoder, FlushNoGap, MonoPcm};
 use std::cmp;
 
-pub fn mp3_encode(left: &Vec<f32>, right: &Vec<f32>) -> Result<Vec<u8>, Mp3Error> {
-    let channels = get_num_channels(left, right);
-
+pub fn mp3_encode(
+    left: &Vec<f32>,
+    right: &Vec<f32>,
+    channels: u8,
+    sample_rate: u32,
+) -> Result<Vec<u8>, Mp3Error> {
     let chunk_size = 1024;
     let mut mp3_encoder =
         Builder::new().ok_or_else(|| Mp3Error::BuildError(BuildError::Generic))?;
@@ -12,7 +15,7 @@ pub fn mp3_encode(left: &Vec<f32>, right: &Vec<f32>) -> Result<Vec<u8>, Mp3Error
         .set_num_channels(channels)
         .expect("set channels");
     mp3_encoder
-        .set_sample_rate(44_100)
+        .set_sample_rate(sample_rate)
         .map_err(|e| Mp3Error::BuildError(e))?;
     mp3_encoder
         .set_brate(mp3lame_encoder::Bitrate::Kbps128)
@@ -90,12 +93,4 @@ fn chunked_encode_mono(
         i += chunk_size;
     }
     Ok(())
-}
-
-fn get_num_channels(left: &Vec<f32>, right: &Vec<f32>) -> u8 {
-    if left.len() > 0 && right.len() > 0 {
-        2
-    } else {
-        1
-    }
 }
