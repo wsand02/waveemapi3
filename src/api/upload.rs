@@ -1,7 +1,7 @@
 use rocket::{form::Form, fs::TempFile, http::Status, serde::json::Json, tokio::io::AsyncReadExt};
+use rocket_apitoken::Authorized;
 
 use crate::audio::wav_decode;
-use crate::auth::ApiToken;
 use crate::{api::catcher::DefaultErrorResp, audio::mp3_encode};
 
 pub fn routes() -> Vec<rocket::Route> {
@@ -19,7 +19,7 @@ struct Upload<'r> {
 
 #[post("/", data = "<upload>")]
 async fn upload(
-    _token: ApiToken,
+    _auth: Authorized,
     upload: Form<Upload<'_>>,
 ) -> Result<ConvertedMp3, (Status, Json<DefaultErrorResp>)> {
     let mut wav_buf = Vec::new();

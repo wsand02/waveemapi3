@@ -29,10 +29,3 @@ impl fmt::Display for WavError {
         }
     }
 }
-
-#[derive(Debug)]
-pub enum AuthError {
-    Missing,
-    Invalid,
-    InvalidServerSetup,
-}

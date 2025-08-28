@@ -2,7 +2,7 @@
 
 **waveemapi3** is yet another wav to mp3 api, but at least it's not a ffmpeg wrapper.
 
-This service is intended for internal API-to-API communication with static api authentication.
+This service is intended for internal API-to-API communication with simple API authentication.
 And only really exists because LAME is licensed with the lame LGPL license :D
 
 ## Installation
@@ -19,11 +19,7 @@ cargo build --release
 
 ## Config
 
-### Token
-Set the `WAVEEMAPI_TOKEN` (environment variable) to whatever you want.
-
-### File limit
-Remove the `.example` from the `Rocket.toml.example` and change it to your liking.
+Remove the `.example` from the `waveemapi.toml.example` and change it to your liking.
 
 ## API Routes
 
@@ -35,5 +31,5 @@ Returns a simple JSON status response.
 
 Accepts a multipart form upload:
 + wav: The WAV file to convert.
-+ Requires an `x-api-key` header matching `WAVEEMAPI_TOKEN`.
++ Requires a bearer token, if auth is enabled.
 

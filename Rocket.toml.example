@@ -1,2 +1,0 @@
-[default]
-limits = { form = "1 GiB", data-form = "1 GB", file = "500 MB" }

@@ -1,6 +1,4 @@
-use rocket::{
-    serde::{Serialize, json::Json},
-};
+use rocket::serde::{Serialize, json::Json};
 
 pub fn routes() -> Vec<rocket::Route> {
     routes![status]
@@ -8,7 +6,9 @@ pub fn routes() -> Vec<rocket::Route> {
 
 #[get("/")]
 fn status() -> Json<StatusResp> {
-    Json(StatusResp { status: "Online".to_string() })
+    Json(StatusResp {
+        status: "Online".to_string(),
+    })
 }
 
 #[derive(Serialize)]
