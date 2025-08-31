@@ -1,6 +1,6 @@
 [package]
 name = "waveemapi3"
-version = "1.0.1"
+version = "1.1.1"
 edition = "2024"
 license = "LGPL-3.0"
 
@@ -11,6 +11,7 @@ mp3lame-encoder = "0.2.1"
 hound = "3.5.1"
 figment = { version = "0.10", features = ["env", "toml"] }
 rocket-apitoken = "0.1.0"
+uuid = { version = "1.18.0", features = ["v4"] }
 
 [profile.profiling]
 inherits = "release"

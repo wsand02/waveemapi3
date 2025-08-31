@@ -3,29 +3,20 @@ use hound::Error as HoundError;
 use mp3lame_encoder::{BuildError, EncodeError};
 
 #[derive(Debug)]
-pub enum Mp3Error {
+pub enum ObaError {
     EncoderError(EncodeError),
     BuildError(BuildError),
-}
-
-impl fmt::Display for Mp3Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Mp3Error::EncoderError(e) => write!(f, "Encoder error: {}", e),
-            Mp3Error::BuildError(e) => write!(f, "Build error: {}", e),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum WavError {
     HoundError(HoundError),
+    IoError(std::io::Error),
 }
 
-impl fmt::Display for WavError {
+impl fmt::Display for ObaError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            WavError::HoundError(e) => write!(f, "Wav error: {}", e),
+            ObaError::EncoderError(e) => write!(f, "Encoder error: {}", e),
+            ObaError::BuildError(e) => write!(f, "Build error: {}", e),
+            ObaError::HoundError(e) => write!(f, "Wav error: {}", e),
+            ObaError::IoError(e) => write!(f, "IO error: {}", e),
         }
     }
 }

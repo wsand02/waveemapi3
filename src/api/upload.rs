@@ -1,8 +1,17 @@
+use std::path::Path;
+
+use rocket::fs::NamedFile;
+use rocket::serde::json::to_string;
+use rocket::tokio;
+use rocket::tokio::fs::File;
 use rocket::{form::Form, fs::TempFile, http::Status, serde::json::Json, tokio::io::AsyncReadExt};
 use rocket_apitoken::Authorized;
 
+use crate::api::catcher::DefaultErrorResp;
 use crate::audio::wav_decode;
-use crate::{api::catcher::DefaultErrorResp, audio::mp3_encode};
+use uuid::Uuid;
+
+pub const ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/", "uploads");
 
 pub fn routes() -> Vec<rocket::Route> {
     routes![upload]
@@ -18,68 +27,18 @@ struct Upload<'r> {
 }
 
 #[post("/", data = "<upload>")]
-async fn upload(
-    _auth: Authorized,
-    upload: Form<Upload<'_>>,
-) -> Result<ConvertedMp3, (Status, Json<DefaultErrorResp>)> {
-    let mut wav_buf = Vec::new();
-    let mut wav_file = upload.wav.open().await.map_err(|_| {
-        (
-            Status::InternalServerError,
-            Json(DefaultErrorResp {
-                error: "Failed to open file".to_string(),
-            }),
-        )
-    })?;
+async fn upload(_auth: Authorized, mut upload: Form<Upload<'_>>) -> Option<NamedFile> {
+    let id = Uuid::new_v4();
+    let uploadp = Path::new(ROOT).join(id.to_string());
+    upload.wav.persist_to(&uploadp).await.unwrap();
 
-    wav_file.read_to_end(&mut wav_buf).await.unwrap();
-    let cursor = std::io::Cursor::new(wav_buf);
-    let reader = hound::WavReader::new(cursor).map_err(|e| {
-        (
-            Status::InternalServerError,
-            Json(DefaultErrorResp {
-                error: format!("Invalid WAV file: {}", e),
-            }),
-        )
-    })?;
-    let sample_rate = reader.spec().sample_rate as u32;
-    let channels = reader.spec().channels as u8;
+    let resultp = tokio::task::spawn_blocking(move || {
+        let reader = hound::WavReader::open(&uploadp).unwrap();
+        wav_decode(reader)
+    })
+    .await
+    .unwrap()
+    .ok()?;
 
-    let (left, right) = match wav_decode(reader) {
-        Ok(data) => data,
-        Err(e) => {
-            return Err((
-                Status::BadRequest,
-                if cfg!(debug_assertions) {
-                    Json(DefaultErrorResp {
-                        error: format!("Failed to encode MP3: {:?}", e),
-                    })
-                } else {
-                    Json(DefaultErrorResp {
-                        error: "Failed to encode MP3".to_string(),
-                    })
-                },
-            ));
-        }
-    };
-
-    let encoder_result = mp3_encode(&left, &right, channels, sample_rate);
-    let mp3_data = match encoder_result {
-        Ok(data) => data,
-        Err(e) => {
-            return Err((
-                Status::BadRequest,
-                if cfg!(debug_assertions) {
-                    Json(DefaultErrorResp {
-                        error: format!("Failed to encode MP3: {:?}", e),
-                    })
-                } else {
-                    Json(DefaultErrorResp {
-                        error: "Failed to encode MP3".to_string(),
-                    })
-                },
-            ));
-        }
-    };
-    Ok(ConvertedMp3(mp3_data))
+    NamedFile::open(resultp).await.ok()
 }
