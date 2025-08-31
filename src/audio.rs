@@ -1,7 +1,6 @@
 use crate::error::ObaError;
-use core::panic;
 use hound::WavReader;
-use mp3lame_encoder::{BuildError, Builder, DualPcm};
+use mp3lame_encoder::{BuildError, Builder, DualPcm, Encoder, MonoPcm};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 
@@ -10,6 +9,7 @@ use std::{io::Read, path::Path};
 use uuid::Uuid;
 
 pub const ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/", "uploads");
+const CHUNK_SIZE: usize = 1152; // https://stackoverflow.com/questions/72416908/mp3-exact-frame-size-calculation
 
 pub fn wav_decode<R: Read>(mut reader: WavReader<R>) -> Result<String, ObaError> {
     let channels = reader.spec().channels as usize;
@@ -52,7 +52,7 @@ pub fn wav_decode<R: Read>(mut reader: WavReader<R>) -> Result<String, ObaError>
     Ok(decode_result)
 }
 
-pub fn process_samples<T>(
+fn process_samples<T>(
     samples: impl Iterator<Item = hound::Result<T>>,
     channels: usize,
     scale: f32,
@@ -79,46 +79,77 @@ where
     let ppath = Path::new(ROOT).join(Uuid::new_v4().to_string());
     let file = File::create(&ppath).map_err(|e| ObaError::IoError(e))?;
     let mut bwriter = BufWriter::new(file);
-    let chunk_size = 1024;
-    let mut left = vec![0_f32; chunk_size];
-    let mut right = vec![0_f32; chunk_size];
-    let mut idx = 0;
+    let mut left = Vec::with_capacity(CHUNK_SIZE);
+    let mut right = Vec::with_capacity(CHUNK_SIZE);
+    let is_stereo = channels == 2;
 
-    for sample in samples {
+    for (idx, sample) in samples.enumerate() {
         let sample_val = sample.map_err(|e| ObaError::HoundError(e))?;
         let srb: f64 = sample_val.into();
         let sr: f32 = srb as f32;
         let s = sr * scale;
-        let chunk_ready = match channels {
-            1 => left.len() >= chunk_size,
-            2 => left.len() >= chunk_size && right.len() >= chunk_size,
-            _ => panic!("Yeah... you shouldn't be here"),
-        };
-        if chunk_ready {
-            let chunk = DualPcm {
-                left: &left,
-                right: &right,
-            };
-            let num_frames = cmp::max(left.len(), right.len());
-            let mut mp3_out_buffer =
-                Vec::with_capacity(mp3lame_encoder::max_required_buffer_size(num_frames));
-            let _encoded = mp3_encoder.encode_to_vec(chunk, &mut mp3_out_buffer);
-            let _ = bwriter.write_all(&mp3_out_buffer);
-            left.clear();
-            right.clear();
-        }
-        match channels {
-            1 => left.push(s),
-            2 => {
-                if idx % 2 == 0 {
-                    left.push(s);
-                } else {
-                    right.push(s);
-                }
-                idx += 1;
+        if is_stereo {
+            if idx % 2 == 0 {
+                left.push(s);
+            } else {
+                right.push(s);
             }
-            _ => panic!("You shouldn't be here"),
+            if left.len() >= CHUNK_SIZE {
+                encode_dual(&left, &right, &mut bwriter, &mut mp3_encoder)?;
+                left.clear();
+                right.clear();
+            }
+        } else {
+            left.push(s);
+            if left.len() >= CHUNK_SIZE {
+                encode_mono(&left, &mut bwriter, &mut mp3_encoder)?;
+                left.clear();
+            }
         }
     }
+    if !left.is_empty() && !right.is_empty() {
+        if !right.is_empty() {
+            encode_dual(&left, &right, &mut bwriter, &mut mp3_encoder)?;
+        } else {
+            encode_mono(&left, &mut bwriter, &mut mp3_encoder)?;
+        }
+    }
+
     Ok(ppath.to_string_lossy().to_string())
+}
+
+fn encode_dual(
+    left: &[f32],
+    right: &[f32],
+    bwriter: &mut BufWriter<File>,
+    encoder: &mut Encoder,
+) -> Result<(), ObaError> {
+    let chunk = DualPcm {
+        left: left,
+        right: right,
+    };
+    let num_frames = cmp::max(left.len(), right.len());
+    let mut mp3_out_buffer =
+        Vec::with_capacity(mp3lame_encoder::max_required_buffer_size(num_frames));
+    let encoded = encoder.encode_to_vec(chunk, &mut mp3_out_buffer)?;
+    if encoded > 0 {
+        bwriter.write_all(&mp3_out_buffer)?;
+    }
+    Ok(())
+}
+
+fn encode_mono(
+    left: &[f32],
+    bwriter: &mut BufWriter<File>,
+    encoder: &mut Encoder,
+) -> Result<(), ObaError> {
+    let chunk = MonoPcm(left);
+    let num_frames = left.len();
+    let mut mp3_out_buffer =
+        Vec::with_capacity(mp3lame_encoder::max_required_buffer_size(num_frames));
+    let encoded = encoder.encode_to_vec(chunk, &mut mp3_out_buffer)?;
+    if encoded > 0 {
+        bwriter.write_all(&mp3_out_buffer)?;
+    }
+    Ok(())
 }
