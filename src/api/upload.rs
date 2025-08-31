@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::Path;
 
 use rocket::fs::NamedFile;
@@ -31,7 +32,7 @@ async fn upload(_auth: Authorized, mut upload: Form<Upload<'_>>) -> Option<Named
     let id = Uuid::new_v4();
     let uploadp = Path::new(ROOT).join(id.to_string());
     upload.wav.persist_to(&uploadp).await.unwrap();
-
+    let uploadpc = uploadp.clone();
     let resultp = tokio::task::spawn_blocking(move || {
         let reader = hound::WavReader::open(&uploadp).unwrap();
         wav_decode(reader)
@@ -39,6 +40,8 @@ async fn upload(_auth: Authorized, mut upload: Form<Upload<'_>>) -> Option<Named
     .await
     .unwrap()
     .ok()?;
+    fs::remove_file(&uploadpc).unwrap(); // remove wav after mp3 encode
+    // todo fix all the things...
 
     NamedFile::open(resultp).await.ok()
 }
