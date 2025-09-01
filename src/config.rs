@@ -1,9 +1,12 @@
 use serde::{Deserialize, Serialize};
 
+const ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/", "data");
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
     pub auth_tokens: Vec<String>,
     pub auth_enabled: bool,
+    pub data_path: String,
 }
 
 impl Default for Config {
@@ -11,6 +14,7 @@ impl Default for Config {
         Config {
             auth_tokens: vec![],
             auth_enabled: true,
+            data_path: ROOT.to_string(),
         }
     }
 }

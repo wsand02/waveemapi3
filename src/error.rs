@@ -6,7 +6,7 @@ use rocket::{http::Status, response::Responder, serde::json::Json, tokio::task::
 use crate::api::DefaultErrorResp;
 
 #[derive(Debug)]
-pub enum ObaError {
+pub enum WaveemapiError {
     EncoderError(EncodeError),
     BuildError(BuildError),
     HoundError(HoundError),
@@ -14,43 +14,43 @@ pub enum ObaError {
     JoinError(JoinError),
 }
 
-impl fmt::Display for ObaError {
+impl fmt::Display for WaveemapiError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ObaError::EncoderError(e) => write!(f, "Encoder error: {}", e),
-            ObaError::BuildError(e) => write!(f, "Build error: {}", e),
-            ObaError::HoundError(e) => write!(f, "Wav error: {}", e),
-            ObaError::IoError(e) => write!(f, "IO error: {}", e),
-            ObaError::JoinError(e) => write!(f, "Join error: {}", e),
+            WaveemapiError::EncoderError(e) => write!(f, "Encoder error: {}", e),
+            WaveemapiError::BuildError(e) => write!(f, "Build error: {}", e),
+            WaveemapiError::HoundError(e) => write!(f, "Wav error: {}", e),
+            WaveemapiError::IoError(e) => write!(f, "IO error: {}", e),
+            WaveemapiError::JoinError(e) => write!(f, "Join error: {}", e),
         }
     }
 }
 
-impl From<JoinError> for ObaError {
+impl From<JoinError> for WaveemapiError {
     fn from(value: JoinError) -> Self {
-        ObaError::JoinError(value)
+        WaveemapiError::JoinError(value)
     }
 }
 
-impl From<std::io::Error> for ObaError {
+impl From<std::io::Error> for WaveemapiError {
     fn from(value: std::io::Error) -> Self {
-        ObaError::IoError(value)
+        WaveemapiError::IoError(value)
     }
 }
 
-impl From<EncodeError> for ObaError {
+impl From<EncodeError> for WaveemapiError {
     fn from(value: EncodeError) -> Self {
-        ObaError::EncoderError(value)
+        WaveemapiError::EncoderError(value)
     }
 }
 
 #[rocket::async_trait]
-impl<'r> Responder<'r, 'static> for ObaError {
+impl<'r> Responder<'r, 'static> for WaveemapiError {
     fn respond_to(self, request: &'r rocket::Request<'_>) -> rocket::response::Result<'static> {
         let status = match self {
-            ObaError::HoundError(_) => Status::BadRequest,
-            ObaError::IoError(_) => Status::InternalServerError,
-            ObaError::BuildError(_) => Status::BadRequest,
+            WaveemapiError::HoundError(_) => Status::BadRequest,
+            WaveemapiError::IoError(_) => Status::InternalServerError,
+            WaveemapiError::BuildError(_) => Status::BadRequest,
             _ => Status::InternalServerError,
         };
         let error_resp = DefaultErrorResp {

@@ -12,6 +12,7 @@ mod api;
 mod audio;
 mod config;
 mod error;
+mod helpers;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
