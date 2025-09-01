@@ -15,6 +15,25 @@ pub fn routes() -> Vec<rocket::Route> {
     routes![upload]
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_routes_len() {
+        let r = routes();
+        assert!(!r.is_empty());
+    }
+
+    #[test]
+    fn test_upload_struct_fields() {
+        // Just check struct can be constructed (lifetime required, so use None for TempFile)
+        fn _dummy<'r>(wav: rocket::fs::TempFile<'r>) -> Upload<'r> {
+            Upload { wav }
+        }
+    }
+}
+
 #[derive(FromForm)]
 struct Upload<'r> {
     wav: TempFile<'r>,

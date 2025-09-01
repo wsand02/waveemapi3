@@ -19,3 +19,19 @@ fn default_catcher(status: Status, _req: &Request) -> Json<DefaultErrorResp> {
 pub struct DefaultErrorResp {
     pub error: String,
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_catchers_len() {
+        let c = catchers();
+        assert!(!c.is_empty());
+    }
+    #[test]
+    fn test_default_error_resp() {
+        let err = DefaultErrorResp {
+            error: "fail".to_string(),
+        };
+        assert_eq!(err.error, "fail");
+    }
+}

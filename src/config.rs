@@ -18,3 +18,16 @@ impl Default for Config {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_config() {
+        let config = Config::default();
+        assert_eq!(config.data_path, ROOT);
+        assert!(config.auth_enabled);
+        assert!(config.auth_tokens.is_empty());
+    }
+}

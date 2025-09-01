@@ -13,6 +13,21 @@ pub enum WaveemapiError {
     Join(rocket::tokio::task::JoinError),
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io;
+    #[test]
+    fn test_from_io_error() {
+        // keep this for now to make adding more tests easier later on.
+        let err = io::Error::new(io::ErrorKind::Other, "fail");
+        let we = WaveemapiError::from(err);
+        match we {
+            WaveemapiError::Io(_) => {}
+            _ => panic!("Wrong variant"),
+        }
+    }
+}
 impl fmt::Display for WaveemapiError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
