@@ -48,7 +48,7 @@ fn rocket() -> _ {
     {
         let mut sched = scheduler.lock().unwrap();
         sched.add(Job::new(
-            "0 0 * * * *".parse::<Schedule>().unwrap(),
+            "0 0 0 * * *".parse::<Schedule>().unwrap(),
             move || {
                 let _ = clear_data_path(&dp);
             },
