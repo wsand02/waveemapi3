@@ -175,3 +175,95 @@ fn encode_mono(
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    const SAMPLE_PATH: &str = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/",
+        "tests",
+        "/",
+        "samples",
+        "/"
+    );
+    const DATA_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/", "tests", "/", "data");
+    use super::*;
+    use hound::WavReader;
+    use std::fs;
+
+    fn decode_sample(name: &str) -> String {
+        let path = format!("{}{}", SAMPLE_PATH, name);
+        let reader = WavReader::open(&path).unwrap();
+        wav_decode(reader, &DATA_PATH.to_string()).unwrap()
+    }
+
+    #[test]
+    fn test_mono_f32_left() {
+        let out_path = decode_sample("idkf32monoleft.wav");
+        assert!(
+            fs::metadata(&out_path).unwrap().len() > 0,
+            "MP3 file is empty"
+        );
+        fs::remove_file(out_path).ok();
+    }
+
+    #[test]
+    fn test_mono_f32_right() {
+        let out_path = decode_sample("idkf32monoright.wav");
+        assert!(
+            fs::metadata(&out_path).unwrap().len() > 0,
+            "MP3 file is empty"
+        );
+        fs::remove_file(out_path).ok();
+    }
+
+    #[test]
+    fn test_mono_f32_merge() {
+        let out_path = decode_sample("idkf32monomerge.wav");
+        assert!(
+            fs::metadata(&out_path).unwrap().len() > 0,
+            "MP3 file is empty"
+        );
+        fs::remove_file(out_path).ok();
+    }
+
+    #[test]
+    fn test_stereo_f32() {
+        let out_path = decode_sample("untitledf32.wav");
+        assert!(
+            fs::metadata(&out_path).unwrap().len() > 0,
+            "MP3 file is empty"
+        );
+        fs::remove_file(out_path).ok();
+    }
+
+    #[test]
+    fn test_stereo_i32() {
+        let out_path = decode_sample("untitledi32.wav");
+        assert!(
+            fs::metadata(&out_path).unwrap().len() > 0,
+            "MP3 file is empty"
+        );
+        fs::remove_file(out_path).ok();
+    }
+
+    #[test]
+    fn test_stereo_i24() {
+        let out_path = decode_sample("untitledi24.wav");
+        assert!(
+            fs::metadata(&out_path).unwrap().len() > 0,
+            "MP3 file is empty"
+        );
+        fs::remove_file(out_path).ok();
+    }
+
+    #[test]
+    fn test_stereo_i16() {
+        let out_path = decode_sample("untitledi16.wav");
+        assert!(
+            fs::metadata(&out_path).unwrap().len() > 0,
+            "MP3 file is empty"
+        );
+        fs::remove_file(out_path).ok();
+    }
+}
