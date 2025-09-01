@@ -29,19 +29,19 @@ pub fn clear_data_path(data_path: &str) -> io::Result<()> {
     Ok(())
 }
 
-pub fn wav_path(data_path: &String) -> String {
+pub fn wav_path(data_path: &str) -> String {
     let id = Uuid::new_v4();
     let filename = format!("{}{}", id, WAV_EXT);
-    Path::new(&data_path)
+    Path::new(data_path)
         .join(filename)
         .to_string_lossy()
         .to_string()
 }
 
-pub fn mp3_path(data_path: &String) -> String {
+pub fn mp3_path(data_path: &str) -> String {
     let id = Uuid::new_v4();
     let filename = format!("{}{}", id, MP3_EXT);
-    Path::new(&data_path)
+    Path::new(data_path)
         .join(filename)
         .to_string_lossy()
         .to_string()
