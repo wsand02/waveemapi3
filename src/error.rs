@@ -58,6 +58,12 @@ impl From<mp3lame_encoder::EncodeError> for WaveemapiError {
     }
 }
 
+impl From<hound::Error> for WaveemapiError {
+    fn from(value: hound::Error) -> Self {
+        WaveemapiError::Hound(value)
+    }
+}
+
 #[rocket::async_trait]
 impl<'r> Responder<'r, 'static> for WaveemapiError {
     fn respond_to(self, request: &'r rocket::Request<'_>) -> rocket::response::Result<'static> {

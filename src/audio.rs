@@ -191,78 +191,138 @@ mod tests {
     use hound::WavReader;
     use std::fs;
 
-    fn decode_sample(name: &str) -> String {
+    fn decode_sample(name: &str) -> Result<String, WaveemapiError> {
         let path = format!("{}{}", SAMPLE_PATH, name);
-        let reader = WavReader::open(&path).unwrap();
-        wav_decode(reader, &DATA_PATH.to_string()).unwrap()
+        let reader = WavReader::open(&path)?;
+        wav_decode(reader, &DATA_PATH.to_string())
+    }
+
+    #[test]
+    fn test_image() {
+        let out_path = decode_sample("477.webp");
+        assert!(matches!(
+            out_path,
+            Err(crate::error::WaveemapiError::Hound(
+                hound::Error::FormatError(_)
+            ))
+        ))
     }
 
     #[test]
     fn test_mono_f32_left() {
-        let out_path = decode_sample("idkf32monoleft.wav");
+        let out_path = decode_sample("idkf32monoleft.wav").unwrap();
         assert!(
             fs::metadata(&out_path).unwrap().len() > 0,
             "MP3 file is empty"
+        );
+        assert_eq!(
+            std::path::Path::new(&out_path)
+                .extension()
+                .and_then(|s| s.to_str()),
+            Some("mp3"),
+            "Output file extension is not .mp3"
         );
         fs::remove_file(out_path).ok();
     }
 
     #[test]
     fn test_mono_f32_right() {
-        let out_path = decode_sample("idkf32monoright.wav");
+        let out_path = decode_sample("idkf32monoright.wav").unwrap();
         assert!(
             fs::metadata(&out_path).unwrap().len() > 0,
             "MP3 file is empty"
+        );
+        assert_eq!(
+            std::path::Path::new(&out_path)
+                .extension()
+                .and_then(|s| s.to_str()),
+            Some("mp3"),
+            "Output file extension is not .mp3"
         );
         fs::remove_file(out_path).ok();
     }
 
     #[test]
     fn test_mono_f32_merge() {
-        let out_path = decode_sample("idkf32monomerge.wav");
+        let out_path = decode_sample("idkf32monomerge.wav").unwrap();
         assert!(
             fs::metadata(&out_path).unwrap().len() > 0,
             "MP3 file is empty"
+        );
+        assert_eq!(
+            std::path::Path::new(&out_path)
+                .extension()
+                .and_then(|s| s.to_str()),
+            Some("mp3"),
+            "Output file extension is not .mp3"
         );
         fs::remove_file(out_path).ok();
     }
 
     #[test]
     fn test_stereo_f32() {
-        let out_path = decode_sample("untitledf32.wav");
+        let out_path = decode_sample("untitledf32.wav").unwrap();
         assert!(
             fs::metadata(&out_path).unwrap().len() > 0,
             "MP3 file is empty"
+        );
+        assert_eq!(
+            std::path::Path::new(&out_path)
+                .extension()
+                .and_then(|s| s.to_str()),
+            Some("mp3"),
+            "Output file extension is not .mp3"
         );
         fs::remove_file(out_path).ok();
     }
 
     #[test]
     fn test_stereo_i32() {
-        let out_path = decode_sample("untitledi32.wav");
+        let out_path = decode_sample("untitledi32.wav").unwrap();
         assert!(
             fs::metadata(&out_path).unwrap().len() > 0,
             "MP3 file is empty"
+        );
+        assert_eq!(
+            std::path::Path::new(&out_path)
+                .extension()
+                .and_then(|s| s.to_str()),
+            Some("mp3"),
+            "Output file extension is not .mp3"
         );
         fs::remove_file(out_path).ok();
     }
 
     #[test]
     fn test_stereo_i24() {
-        let out_path = decode_sample("untitledi24.wav");
+        let out_path = decode_sample("untitledi24.wav").unwrap();
         assert!(
             fs::metadata(&out_path).unwrap().len() > 0,
             "MP3 file is empty"
+        );
+        assert_eq!(
+            std::path::Path::new(&out_path)
+                .extension()
+                .and_then(|s| s.to_str()),
+            Some("mp3"),
+            "Output file extension is not .mp3"
         );
         fs::remove_file(out_path).ok();
     }
 
     #[test]
     fn test_stereo_i16() {
-        let out_path = decode_sample("untitledi16.wav");
+        let out_path = decode_sample("untitledi16.wav").unwrap();
         assert!(
             fs::metadata(&out_path).unwrap().len() > 0,
             "MP3 file is empty"
+        );
+        assert_eq!(
+            std::path::Path::new(&out_path)
+                .extension()
+                .and_then(|s| s.to_str()),
+            Some("mp3"),
+            "Output file extension is not .mp3"
         );
         fs::remove_file(out_path).ok();
     }

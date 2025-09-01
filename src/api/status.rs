@@ -20,7 +20,6 @@ struct StatusResp {
 mod tests {
     use super::*;
     use crate::rocket;
-    use rocket::http::Status;
     use rocket::local::blocking::Client;
     use rocket::serde::json;
     #[test]
