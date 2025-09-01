@@ -1,16 +1,38 @@
-use rocket::{form::Form, fs::TempFile, http::Status, serde::json::Json, tokio::io::AsyncReadExt};
+use rocket::fs::NamedFile;
+
+use rocket::tokio::fs;
+use rocket::{State, tokio};
+
+use rocket::{form::Form, fs::TempFile};
 use rocket_apitoken::Authorized;
 
 use crate::audio::wav_decode;
-use crate::{api::catcher::DefaultErrorResp, audio::mp3_encode};
+use crate::config::Config;
+use crate::error::WaveemapiError;
+use crate::helpers::wav_path;
 
 pub fn routes() -> Vec<rocket::Route> {
     routes![upload]
 }
 
-#[derive(Responder)]
-#[response(status = 200, content_type = "audio/mpeg")]
-struct ConvertedMp3(Vec<u8>);
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_routes_len() {
+        let r = routes();
+        assert!(!r.is_empty());
+    }
+
+    #[test]
+    fn test_upload_struct_fields() {
+        // Just check struct can be constructed (lifetime required, so use None for TempFile)
+        fn _dummy<'r>(wav: rocket::fs::TempFile<'r>) -> Upload<'r> {
+            Upload { wav }
+        }
+    }
+}
 
 #[derive(FromForm)]
 struct Upload<'r> {
@@ -20,66 +42,19 @@ struct Upload<'r> {
 #[post("/", data = "<upload>")]
 async fn upload(
     _auth: Authorized,
-    upload: Form<Upload<'_>>,
-) -> Result<ConvertedMp3, (Status, Json<DefaultErrorResp>)> {
-    let mut wav_buf = Vec::new();
-    let mut wav_file = upload.wav.open().await.map_err(|_| {
-        (
-            Status::InternalServerError,
-            Json(DefaultErrorResp {
-                error: "Failed to open file".to_string(),
-            }),
-        )
-    })?;
-
-    wav_file.read_to_end(&mut wav_buf).await.unwrap();
-    let cursor = std::io::Cursor::new(wav_buf);
-    let reader = hound::WavReader::new(cursor).map_err(|e| {
-        (
-            Status::InternalServerError,
-            Json(DefaultErrorResp {
-                error: format!("Invalid WAV file: {}", e),
-            }),
-        )
-    })?;
-    let sample_rate = reader.spec().sample_rate as u32;
-    let channels = reader.spec().channels as u8;
-
-    let (left, right) = match wav_decode(reader) {
-        Ok(data) => data,
-        Err(e) => {
-            return Err((
-                Status::BadRequest,
-                if cfg!(debug_assertions) {
-                    Json(DefaultErrorResp {
-                        error: format!("Failed to encode MP3: {:?}", e),
-                    })
-                } else {
-                    Json(DefaultErrorResp {
-                        error: "Failed to encode MP3".to_string(),
-                    })
-                },
-            ));
-        }
-    };
-
-    let encoder_result = mp3_encode(&left, &right, channels, sample_rate);
-    let mp3_data = match encoder_result {
-        Ok(data) => data,
-        Err(e) => {
-            return Err((
-                Status::BadRequest,
-                if cfg!(debug_assertions) {
-                    Json(DefaultErrorResp {
-                        error: format!("Failed to encode MP3: {:?}", e),
-                    })
-                } else {
-                    Json(DefaultErrorResp {
-                        error: "Failed to encode MP3".to_string(),
-                    })
-                },
-            ));
-        }
-    };
-    Ok(ConvertedMp3(mp3_data))
+    mut upload: Form<Upload<'_>>,
+    config: &State<Config>,
+) -> Result<NamedFile, WaveemapiError> {
+    let data_path = config.data_path.clone();
+    let uploadp = wav_path(&data_path);
+    upload.wav.persist_to(&uploadp).await?;
+    let uploadpc = uploadp.clone();
+    let resultp = tokio::task::spawn_blocking(move || {
+        let reader = hound::WavReader::open(&uploadp).map_err(WaveemapiError::Hound)?;
+        wav_decode(reader, &data_path)
+    })
+    .await?;
+    fs::remove_file(&uploadpc).await?; // remove wav after mp3 encode
+    let val = resultp?;
+    NamedFile::open(&val).await.map_err(WaveemapiError::Io)
 }

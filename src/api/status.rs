@@ -12,6 +12,6 @@ fn status() -> Json<StatusResp> {
 }
 
 #[derive(Serialize)]
-struct StatusResp {
-    status: String,
+pub(crate) struct StatusResp {
+    pub status: String,
 }
