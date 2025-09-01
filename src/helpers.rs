@@ -47,15 +47,16 @@ pub fn mp3_path(data_path: &String) -> String {
         .to_string()
 }
 
+#[allow(dead_code)]
+fn get_unique_data_path() -> String {
+    let unique_id = Uuid::new_v4();
+    format!("/tmp/{}", unique_id)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::path::Path;
-
-    fn get_unique_data_path() -> String {
-        let unique_id = Uuid::new_v4();
-        format!("/tmp/{}", unique_id)
-    }
 
     #[test]
     fn test_wav_path_format() {
@@ -181,7 +182,7 @@ mod tests {
 
         let other_file = test_dir.join("not_to_delete.txt");
         fs::write(&other_file, b"keep me").unwrap();
-        clear_data_path(&test_dir.to_string_lossy().to_string()).unwrap();
+        clear_data_path(test_dir.to_string_lossy().as_ref()).unwrap();
         assert!(other_file.exists(), "Non-matching file should remain");
         for entry in fs::read_dir(test_dir).unwrap() {
             let entry = entry.unwrap();

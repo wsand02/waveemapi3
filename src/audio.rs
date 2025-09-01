@@ -176,27 +176,28 @@ fn encode_mono(
     Ok(())
 }
 
+#[allow(dead_code)]
+const SAMPLE_PATH: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/",
+    "tests",
+    "/",
+    "samples",
+    "/"
+);
+
+#[allow(dead_code)]
+fn decode_sample(name: &str, data_path: &str) -> Result<String, WaveemapiError> {
+    let path = format!("{}{}", SAMPLE_PATH, name);
+    let reader = WavReader::open(&path)?;
+    wav_decode(reader, &data_path.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hound::WavReader;
     use std::fs;
     use tempfile::tempdir;
-
-    const SAMPLE_PATH: &str = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/",
-        "tests",
-        "/",
-        "samples",
-        "/"
-    );
-
-    fn decode_sample(name: &str, data_path: &str) -> Result<String, WaveemapiError> {
-        let path = format!("{}{}", SAMPLE_PATH, name);
-        let reader = WavReader::open(&path)?;
-        wav_decode(reader, &data_path.to_string())
-    }
 
     #[test]
     fn test_image() {
