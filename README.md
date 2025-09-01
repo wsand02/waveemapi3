@@ -17,9 +17,15 @@ cd waveemapi3
 cargo build --release
 ```
 
-## Config
+Create the data directory `data`.
+
+Make sure the user running waveemapi has the right set of permissions for it.
+
+Copy `waveemapi.toml.example` into `waveemapi.toml`.
 
 Remove the `.example` from the `waveemapi.toml.example` and change it to your liking.
+
+If your data folder is not in the same directory as `Cargo.toml` you must declare it here under `data_path`.
 
 ## API Routes
 
