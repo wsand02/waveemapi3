@@ -75,7 +75,7 @@ where
         Builder::new().ok_or_else(|| WaveemapiError::Build(BuildError::Generic))?;
     mp3_encoder
         .set_num_channels(channels as u8)
-        .expect("set channels");
+        .expect("Failed to set number of channels on MP3 encoder");
     mp3_encoder
         .set_sample_rate(sample_rate)
         .map_err(WaveemapiError::Build)?;
