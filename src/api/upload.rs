@@ -55,8 +55,6 @@ async fn upload(
     })
     .await?;
     fs::remove_file(&uploadpc).await?; // remove wav after mp3 encode
-    match resultp {
-        Ok(val) => NamedFile::open(&val).await.map_err(WaveemapiError::Io),
-        Err(e) => Err(e),
-    }
+    let val = resultp?;
+    NamedFile::open(&val).await.map_err(WaveemapiError::Io)
 }
