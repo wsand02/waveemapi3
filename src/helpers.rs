@@ -22,7 +22,7 @@ pub fn clear_data_path(data_path: &str) -> io::Result<()> {
             let is_wav = fname.ends_with(WAV_EXT);
             let is_mp3 = fname.ends_with(MP3_EXT);
             if (is_wav || is_mp3) && fname.len() == FNAME_LEN {
-                let _ = fs::remove_file(&path);
+                fs::remove_file(&path)?;
             }
         }
     }
