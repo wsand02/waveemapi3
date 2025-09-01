@@ -10,6 +10,9 @@ use std::cmp;
 use std::io::Read;
 
 const CHUNK_SIZE: usize = 1152; // https://stackoverflow.com/questions/72416908/mp3-exact-frame-size-calculation
+const I32_MAXPONE: f32 = 2147483648.0_f32; // 2^31
+const I24_MAXPONE: f32 = 8388608.0_f32; // 2^23
+const I16_MAXPONE: f32 = 32768.0_f32; // 2^15
 
 pub fn wav_decode<R: Read>(
     mut reader: WavReader<R>,
@@ -26,14 +29,14 @@ pub fn wav_decode<R: Read>(
         16 => process_samples(
             reader.samples::<i16>(),
             channels,
-            1.0 / 32768.0,
+            1.0 / I16_MAXPONE,
             sample_rate,
             data_path,
         )?,
         24 => process_samples(
             reader.samples::<i32>(),
             channels,
-            1.0 / 8388608.0,
+            1.0 / I24_MAXPONE,
             sample_rate,
             data_path,
         )?,
@@ -48,7 +51,7 @@ pub fn wav_decode<R: Read>(
             hound::SampleFormat::Int => process_samples(
                 reader.samples::<i32>(),
                 channels,
-                1.0 / 2147483648.0_f32,
+                1.0 / I32_MAXPONE,
                 sample_rate,
                 data_path,
             )?,
