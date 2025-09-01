@@ -136,20 +136,30 @@ mod tests {
 
     #[test]
     fn test_path_validity() {
-        let data_path = "/tmp/test".to_string();
-        let wav_result = wav_path(&data_path);
-        let mp3_result = mp3_path(&data_path);
+        let is_unix = cfg!(unix);
+        if !is_unix && !cfg!(windows) {
+            panic!("Unsupported OS, giving up...");
+        }
+        
+        let data_path: &str = if is_unix {
+            "/tmp/test"
+        } else {
+            "C:\\Temp\\Test"
+        };
+        let wav_result = wav_path(data_path);
+        let mp3_result = mp3_path(data_path);
 
         // Test that the generated paths are valid Path objects
         let wav_path_obj = Path::new(&wav_result);
         let mp3_path_obj = Path::new(&mp3_result);
-
+        println!("{}", wav_path_obj.parent().unwrap().to_string_lossy().as_ref());
         assert!(wav_path_obj.is_absolute());
         assert!(mp3_path_obj.is_absolute());
 
+        
         // Test that parent directory is as expected
-        assert_eq!(wav_path_obj.parent().unwrap(), Path::new("/tmp/test"));
-        assert_eq!(mp3_path_obj.parent().unwrap(), Path::new("/tmp/test"));
+        assert_eq!(wav_path_obj.parent().unwrap(), Path::new(data_path));
+        assert_eq!(mp3_path_obj.parent().unwrap(), Path::new(data_path));
     }
 
     #[test]
