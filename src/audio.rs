@@ -1,7 +1,7 @@
 use crate::error::WaveemapiError;
 use crate::helpers::mp3_path;
 use hound::WavReader;
-use mp3lame_encoder::{BuildError, Builder, DualPcm, Encoder, FlushNoGap, MonoPcm};
+use mp3lame_encoder::{BuildError, Builder, DualPcm, Encoder, FlushNoGap, Id3Tag, MonoPcm};
 
 use std::fs::File;
 use std::io::{BufWriter, Write};
@@ -85,6 +85,16 @@ where
     mp3_encoder
         .set_quality(mp3lame_encoder::Quality::Decent)
         .map_err(WaveemapiError::Build)?;
+
+    mp3_encoder.set_id3_tag(Id3Tag {
+        title: b"title",
+        artist: b"artist",
+        album_art: &[],
+        album: b"album",
+        year: b"year",
+        comment: b"comment",
+    })?;
+
     let mut mp3_encoder = mp3_encoder.build().map_err(WaveemapiError::Build)?;
     let ppath = mp3_path(data_path);
     let file = File::create(&ppath).map_err(WaveemapiError::Io)?;
@@ -111,8 +121,8 @@ where
                     &mut bwriter,
                     &mut mp3_encoder,
                 )?;
-                left.clear();
-                right.clear();
+                left.drain(..CHUNK_SIZE);
+                right.drain(..CHUNK_SIZE);
             }
         } else {
             left.push(s);

@@ -11,6 +11,7 @@ pub enum WaveemapiError {
     Hound(hound::Error),
     Io(std::io::Error),
     Join(rocket::tokio::task::JoinError),
+    Id3Tag(mp3lame_encoder::Id3TagError),
 }
 
 impl fmt::Display for WaveemapiError {
@@ -21,6 +22,7 @@ impl fmt::Display for WaveemapiError {
             WaveemapiError::Hound(e) => write!(f, "Wav error: {}", e),
             WaveemapiError::Io(e) => write!(f, "IO error: {}", e),
             WaveemapiError::Join(e) => write!(f, "Join error: {}", e),
+            WaveemapiError::Id3Tag(_) => write!(f, "ID3 tag error"),
         }
     }
 }
@@ -46,6 +48,12 @@ impl From<mp3lame_encoder::EncodeError> for WaveemapiError {
 impl From<hound::Error> for WaveemapiError {
     fn from(value: hound::Error) -> Self {
         WaveemapiError::Hound(value)
+    }
+}
+
+impl From<mp3lame_encoder::Id3TagError> for WaveemapiError {
+    fn from(value: mp3lame_encoder::Id3TagError) -> Self {
+        WaveemapiError::Id3Tag(value)
     }
 }
 
