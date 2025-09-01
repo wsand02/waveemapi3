@@ -1,6 +1,6 @@
 use crate::error::ObaError;
 use hound::WavReader;
-use mp3lame_encoder::{BuildError, Builder, DualPcm, Encoder, MonoPcm};
+use mp3lame_encoder::{BuildError, Builder, DualPcm, Encoder, FlushNoGap, MonoPcm};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 
@@ -94,8 +94,13 @@ where
             } else {
                 right.push(s);
             }
-            if left.len() >= CHUNK_SIZE {
-                encode_dual(&left, &right, &mut bwriter, &mut mp3_encoder)?;
+            if left.len() >= CHUNK_SIZE && right.len() >= CHUNK_SIZE {
+                encode_dual(
+                    &left[..CHUNK_SIZE],
+                    &right[..CHUNK_SIZE],
+                    &mut bwriter,
+                    &mut mp3_encoder,
+                )?;
                 left.clear();
                 right.clear();
             }
@@ -107,14 +112,29 @@ where
             }
         }
     }
-    if !left.is_empty() && !right.is_empty() {
-        if !right.is_empty() {
+    if is_stereo {
+        if !left.is_empty() || !right.is_empty() {
+            let max_len = std::cmp::max(left.len(), right.len());
+            left.resize(max_len, 0.0);
+            right.resize(max_len, 0.0);
             encode_dual(&left, &right, &mut bwriter, &mut mp3_encoder)?;
-        } else {
+            left.clear();
+            right.clear();
+        }
+    } else {
+        if !left.is_empty() {
             encode_mono(&left, &mut bwriter, &mut mp3_encoder)?;
+            left.clear();
         }
     }
+    let num_frames = cmp::max(left.len(), right.len());
+    let mut tail = Vec::with_capacity(mp3lame_encoder::max_required_buffer_size(num_frames));
+    let flushed = mp3_encoder.flush_to_vec::<FlushNoGap>(&mut tail)?;
+    if flushed > 0 {
+        bwriter.write_all(&tail).map_err(ObaError::IoError)?;
+    }
 
+    bwriter.flush()?;
     Ok(ppath.to_string_lossy().to_string())
 }
 
