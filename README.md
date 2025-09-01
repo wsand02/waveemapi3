@@ -1,4 +1,8 @@
 # waveemapi3
+[![Rust](https://github.com/wsand02/waveemapi3/actions/workflows/rust.yml/badge.svg)](https://github.com/wsand02/waveemapi3/actions/workflows/rust.yml)
+[![Clippy check](https://github.com/wsand02/waveemapi3/actions/workflows/clippy.yml/badge.svg)](https://github.com/wsand02/waveemapi3/actions/workflows/clippy.yml)
+![GitHub repo size](https://img.shields.io/github/repo-size/wsand02/waveemapi3)
+![GitHub License](https://img.shields.io/github/license/wsand02/waveemapi3)
 
 **waveemapi3** is yet another wav to mp3 api, but at least it's not a ffmpeg wrapper.
 
