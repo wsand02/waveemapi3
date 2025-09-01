@@ -2,8 +2,31 @@ use std::path::Path;
 
 use uuid::Uuid;
 
+use std::fs;
+use std::io;
+
 const MP3_EXT: &str = ".mp3";
 const WAV_EXT: &str = ".wav";
+
+/// Deletes all .wav and .mp3 files in `data_path` that are exactly 40 characters long (including extension).
+pub fn clear_data_path(data_path: &str) -> io::Result<()> {
+    let dir = Path::new(data_path);
+    if !dir.is_dir() {
+        return Ok(());
+    }
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if let Some(fname) = path.file_name().and_then(|n| n.to_str()) {
+            let is_wav = fname.ends_with(WAV_EXT);
+            let is_mp3 = fname.ends_with(MP3_EXT);
+            if (is_wav || is_mp3) && fname.len() == 40 {
+                let _ = fs::remove_file(&path);
+            }
+        }
+    }
+    Ok(())
+}
 
 pub fn wav_path(data_path: &String) -> String {
     let id = Uuid::new_v4();
@@ -29,6 +52,15 @@ mod tests {
     use std::path::Path;
 
     const FNAME_LEN: usize = 40; // 36 (uuid) + 4 (.mp3)
+    const SAMPLE_PATH: &str = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/",
+        "tests",
+        "/",
+        "samples",
+        "/"
+    );
+    const DATA_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/", "tests", "/", "data");
 
     #[test]
     fn test_wav_path_format() {
@@ -132,5 +164,36 @@ mod tests {
             Uuid::parse_str(filename).is_ok(),
             "Generated filename should be a valid UUID"
         );
+    }
+
+    #[test]
+    fn test_clear_data_path() {
+        let test_dir = Path::new(DATA_PATH);
+
+        // fs::create_dir_all(test_dir).unwrap(); // should already exist not required
+        for _ in 0..5 {
+            let wav_file = test_dir.join(format!("{}.wav", Uuid::new_v4()));
+            let mp3_file = test_dir.join(format!("{}.mp3", Uuid::new_v4()));
+            fs::write(&wav_file, b"test").unwrap();
+            fs::write(&mp3_file, b"test").unwrap();
+        }
+        // Create some non-matching files
+        let other_file = test_dir.join("not_to_delete.txt");
+        fs::write(&other_file, b"keep me").unwrap();
+        let short_file = test_dir.join("short.mp3");
+        clear_data_path(&test_dir.to_string_lossy().to_string()).unwrap();
+        assert!(other_file.exists(), "Non-matching file should remain");
+        assert!(short_file.exists(), "Short file should remain");
+        for entry in fs::read_dir(test_dir).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            if let Some(fname) = path.file_name().and_then(|n| n.to_str()) {
+                let is_wav = fname.ends_with(WAV_EXT);
+                let is_mp3 = fname.ends_with(MP3_EXT);
+                if (is_wav || is_mp3) && fname.len() == 40 {
+                    panic!("File {} should have been deleted", fname);
+                }
+            }
+        }
     }
 }

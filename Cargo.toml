@@ -12,6 +12,7 @@ hound = "3.5.1"
 figment = { version = "0.10", features = ["env", "toml"] }
 rocket-apitoken = "0.1.0"
 uuid = { version = "1.18.0", features = ["v4"] }
+job_scheduler_ng = "2.3.0"
 
 [profile.profiling]
 inherits = "release"
