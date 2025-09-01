@@ -15,25 +15,6 @@ pub fn routes() -> Vec<rocket::Route> {
     routes![upload]
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_routes_len() {
-        let r = routes();
-        assert!(!r.is_empty());
-    }
-
-    #[test]
-    fn test_upload_struct_fields() {
-        // Just check struct can be constructed (lifetime required, so use None for TempFile)
-        fn _dummy<'r>(wav: rocket::fs::TempFile<'r>) -> Upload<'r> {
-            Upload { wav }
-        }
-    }
-}
-
 #[derive(FromForm)]
 struct Upload<'r> {
     wav: TempFile<'r>,
@@ -57,4 +38,36 @@ async fn upload(
     fs::remove_file(&uploadpc).await?; // remove wav after mp3 encode
     let val = resultp?;
     NamedFile::open(&val).await.map_err(WaveemapiError::Io)
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::rocket;
+
+    #[test]
+    fn test_upload_auth_no_head() {
+        use rocket::local::blocking::Client;
+
+        // Construct a client to use for dispatching requests.
+        let client = Client::tracked(rocket()).expect("valid `Rocket`");
+
+        // Dispatch a request to 'GET /' and validate the response.
+        let response = client.post("/api/upload").dispatch();
+        assert_eq!(response.status(), rocket::http::Status::Unauthorized);
+    }
+
+    #[test]
+    fn test_upload_auth_invalid_token() {
+        use rocket::local::blocking::Client;
+
+        // Construct a client to use for dispatching requests.
+        let client = Client::tracked(rocket()).expect("valid `Rocket`");
+        // Dispatch a request to 'GET /' and validate the response.
+        let response = client
+            .post("/api/upload")
+            .header(rocket::http::Header::new("Authorization", "Bearer uwu"))
+            .dispatch();
+        assert_eq!(response.status(), rocket::http::Status::Unauthorized);
+    }
 }
