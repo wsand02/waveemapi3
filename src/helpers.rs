@@ -171,7 +171,6 @@ mod tests {
         let test_dir = tmpdir.path();
         println!("Test directory: {:?}", test_dir);
 
-        // fs::create_dir_all(test_dir).unwrap(); // should already exist not required
         for _ in 0..5 {
             let wav_file = test_dir.join(format!("{}.wav", Uuid::new_v4()));
             let mp3_file = test_dir.join(format!("{}.mp3", Uuid::new_v4()));
