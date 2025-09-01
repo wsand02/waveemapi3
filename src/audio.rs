@@ -178,6 +178,11 @@ fn encode_mono(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use hound::WavReader;
+    use std::fs;
+    use tempfile::tempdir;
+
     const SAMPLE_PATH: &str = concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/",
@@ -186,20 +191,18 @@ mod tests {
         "samples",
         "/"
     );
-    const DATA_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/", "tests", "/", "data");
-    use super::*;
-    use hound::WavReader;
-    use std::fs;
 
-    fn decode_sample(name: &str) -> Result<String, WaveemapiError> {
+    fn decode_sample(name: &str, data_path: &str) -> Result<String, WaveemapiError> {
         let path = format!("{}{}", SAMPLE_PATH, name);
         let reader = WavReader::open(&path)?;
-        wav_decode(reader, &DATA_PATH.to_string())
+        wav_decode(reader, &data_path.to_string())
     }
 
     #[test]
     fn test_image() {
-        let out_path = decode_sample("477.webp");
+        let tmpdir = tempdir().unwrap();
+        let data_path = tmpdir.path().to_str().unwrap();
+        let out_path = decode_sample("477.webp", data_path);
         assert!(matches!(
             out_path,
             Err(crate::error::WaveemapiError::Hound(
@@ -210,7 +213,9 @@ mod tests {
 
     #[test]
     fn test_mono_f32_left() {
-        let out_path = decode_sample("idkf32monoleft.wav").unwrap();
+        let tmpdir = tempdir().unwrap();
+        let data_path = tmpdir.path().to_str().unwrap();
+        let out_path = decode_sample("idkf32monoleft.wav", data_path).unwrap();
         assert!(
             fs::metadata(&out_path).unwrap().len() > 0,
             "MP3 file is empty"
@@ -227,7 +232,9 @@ mod tests {
 
     #[test]
     fn test_mono_f32_right() {
-        let out_path = decode_sample("idkf32monoright.wav").unwrap();
+        let tmpdir = tempdir().unwrap();
+        let data_path = tmpdir.path().to_str().unwrap();
+        let out_path = decode_sample("idkf32monoright.wav", data_path).unwrap();
         assert!(
             fs::metadata(&out_path).unwrap().len() > 0,
             "MP3 file is empty"
@@ -244,7 +251,9 @@ mod tests {
 
     #[test]
     fn test_mono_f32_merge() {
-        let out_path = decode_sample("idkf32monomerge.wav").unwrap();
+        let tmpdir = tempdir().unwrap();
+        let data_path = tmpdir.path().to_str().unwrap();
+        let out_path = decode_sample("idkf32monomerge.wav", data_path).unwrap();
         assert!(
             fs::metadata(&out_path).unwrap().len() > 0,
             "MP3 file is empty"
@@ -261,7 +270,9 @@ mod tests {
 
     #[test]
     fn test_stereo_f32() {
-        let out_path = decode_sample("untitledf32.wav").unwrap();
+        let tmpdir = tempdir().unwrap();
+        let data_path = tmpdir.path().to_str().unwrap();
+        let out_path = decode_sample("untitledf32.wav", data_path).unwrap();
         assert!(
             fs::metadata(&out_path).unwrap().len() > 0,
             "MP3 file is empty"
@@ -278,7 +289,9 @@ mod tests {
 
     #[test]
     fn test_stereo_i32() {
-        let out_path = decode_sample("untitledi32.wav").unwrap();
+        let tmpdir = tempdir().unwrap();
+        let data_path = tmpdir.path().to_str().unwrap();
+        let out_path = decode_sample("untitledi32.wav", data_path).unwrap();
         assert!(
             fs::metadata(&out_path).unwrap().len() > 0,
             "MP3 file is empty"
@@ -295,7 +308,9 @@ mod tests {
 
     #[test]
     fn test_stereo_i24() {
-        let out_path = decode_sample("untitledi24.wav").unwrap();
+        let tmpdir = tempdir().unwrap();
+        let data_path = tmpdir.path().to_str().unwrap();
+        let out_path = decode_sample("untitledi24.wav", data_path).unwrap();
         assert!(
             fs::metadata(&out_path).unwrap().len() > 0,
             "MP3 file is empty"
@@ -312,7 +327,9 @@ mod tests {
 
     #[test]
     fn test_stereo_i16() {
-        let out_path = decode_sample("untitledi16.wav").unwrap();
+        let tmpdir = tempdir().unwrap();
+        let data_path = tmpdir.path().to_str().unwrap();
+        let out_path = decode_sample("untitledi16.wav", data_path).unwrap();
         assert!(
             fs::metadata(&out_path).unwrap().len() > 0,
             "MP3 file is empty"

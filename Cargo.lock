@@ -1617,6 +1617,7 @@ dependencies = [
  "rocket",
  "rocket-apitoken",
  "serde",
+ "tempfile",
  "uuid",
 ]
 

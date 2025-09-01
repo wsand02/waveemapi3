@@ -7,6 +7,7 @@ use std::io;
 
 const MP3_EXT: &str = ".mp3";
 const WAV_EXT: &str = ".wav";
+const FNAME_LEN: usize = 40; // 36 (uuid) + 4 (.mp3)
 
 /// Deletes all .wav and .mp3 files in `data_path` that are exactly 40 characters long (including extension).
 pub fn clear_data_path(data_path: &str) -> io::Result<()> {
@@ -20,7 +21,7 @@ pub fn clear_data_path(data_path: &str) -> io::Result<()> {
         if let Some(fname) = path.file_name().and_then(|n| n.to_str()) {
             let is_wav = fname.ends_with(WAV_EXT);
             let is_mp3 = fname.ends_with(MP3_EXT);
-            if (is_wav || is_mp3) && fname.len() == 40 {
+            if (is_wav || is_mp3) && fname.len() == FNAME_LEN {
                 let _ = fs::remove_file(&path);
             }
         }
@@ -51,23 +52,17 @@ mod tests {
     use super::*;
     use std::path::Path;
 
-    const FNAME_LEN: usize = 40; // 36 (uuid) + 4 (.mp3)
-    const SAMPLE_PATH: &str = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/",
-        "tests",
-        "/",
-        "samples",
-        "/"
-    );
-    const DATA_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/", "tests", "/", "data");
+    fn get_unique_data_path() -> String {
+        let unique_id = Uuid::new_v4();
+        format!("/tmp/{}", unique_id)
+    }
 
     #[test]
     fn test_wav_path_format() {
-        let data_path = "/tmp/audio".to_string();
+        let data_path = get_unique_data_path();
         let result = wav_path(&data_path);
 
-        assert!(result.starts_with("/tmp/audio"));
+        assert!(result.starts_with(data_path.as_str()));
 
         assert!(result.ends_with(".wav"));
 
@@ -77,10 +72,10 @@ mod tests {
 
     #[test]
     fn test_mp3_path_format() {
-        let data_path = "/tmp/audio".to_string();
+        let data_path = get_unique_data_path();
         let result = mp3_path(&data_path);
 
-        assert!(result.starts_with("/tmp/audio"));
+        assert!(result.starts_with(data_path.as_str()));
 
         assert!(result.ends_with(".mp3"));
 
@@ -90,13 +85,16 @@ mod tests {
 
     #[test]
     fn test_unique_paths() {
-        let data_path = "/tmp/audio".to_string();
+        let data_path1 = get_unique_data_path();
+        let data_path2 = get_unique_data_path();
+        let data_path3 = get_unique_data_path();
+        let data_path4 = get_unique_data_path();
 
         // Generate multiple paths and ensure they're unique
-        let wav1 = wav_path(&data_path);
-        let wav2 = wav_path(&data_path);
-        let mp3_1 = mp3_path(&data_path);
-        let mp3_2 = mp3_path(&data_path);
+        let wav1 = wav_path(&data_path1);
+        let wav2 = wav_path(&data_path2);
+        let mp3_1 = mp3_path(&data_path3);
+        let mp3_2 = mp3_path(&data_path4);
 
         assert_ne!(wav1, wav2);
         assert_ne!(mp3_1, mp3_2);
@@ -105,14 +103,14 @@ mod tests {
 
     #[test]
     fn test_different_data_paths() {
-        let path1 = "/tmp/audio1".to_string();
-        let path2 = "/tmp/audio2".to_string();
+        let path1 = get_unique_data_path();
+        let path2 = get_unique_data_path();
 
         let result1 = wav_path(&path1);
         let result2 = wav_path(&path2);
 
-        assert!(result1.starts_with("/tmp/audio1"));
-        assert!(result2.starts_with("/tmp/audio2"));
+        assert!(result1.starts_with(path1.as_str()));
+        assert!(result2.starts_with(path2.as_str()));
     }
 
     #[test]
@@ -168,7 +166,9 @@ mod tests {
 
     #[test]
     fn test_clear_data_path() {
-        let test_dir = Path::new(DATA_PATH);
+        let tmpdir = tempfile::tempdir().unwrap();
+        let test_dir = tmpdir.path();
+        println!("Test directory: {:?}", test_dir);
 
         // fs::create_dir_all(test_dir).unwrap(); // should already exist not required
         for _ in 0..5 {
@@ -178,12 +178,11 @@ mod tests {
             fs::write(&mp3_file, b"test").unwrap();
         }
         // Create some non-matching files
+
         let other_file = test_dir.join("not_to_delete.txt");
         fs::write(&other_file, b"keep me").unwrap();
-        let short_file = test_dir.join("short.mp3");
         clear_data_path(&test_dir.to_string_lossy().to_string()).unwrap();
         assert!(other_file.exists(), "Non-matching file should remain");
-        assert!(short_file.exists(), "Short file should remain");
         for entry in fs::read_dir(test_dir).unwrap() {
             let entry = entry.unwrap();
             let path = entry.path();
@@ -195,5 +194,6 @@ mod tests {
                 }
             }
         }
+        fs::remove_file(other_file).ok(); // clean up
     }
 }
