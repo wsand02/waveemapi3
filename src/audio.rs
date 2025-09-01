@@ -16,7 +16,7 @@ const I16_MAXPONE: f32 = 32768.0_f32; // 2^15
 
 pub fn wav_decode<R: Read>(
     mut reader: WavReader<R>,
-    data_path: &String,
+    data_path: &str,
 ) -> Result<String, WaveemapiError> {
     let channels = reader.spec().channels as usize;
     let bit_depth = reader.spec().bits_per_sample;
@@ -66,7 +66,7 @@ fn process_samples<T>(
     channels: usize,
     scale: f32,
     sample_rate: u32,
-    data_path: &String,
+    data_path: &str,
 ) -> Result<String, WaveemapiError>
 where
     f64: From<T>,
@@ -193,7 +193,7 @@ const SAMPLE_PATH: &str = concat!(
 fn decode_sample(name: &str, data_path: &str) -> Result<String, WaveemapiError> {
     let path = format!("{}{}", SAMPLE_PATH, name);
     let reader = WavReader::open(&path)?;
-    wav_decode(reader, &data_path.to_string())
+    wav_decode(reader, data_path)
 }
 
 #[cfg(test)]
