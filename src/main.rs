@@ -41,7 +41,7 @@ fn rocket() -> _ {
 
     // Get data_path from config
     let data_path: String = figment.extract_inner("data_path").expect("data_path");
-    clear_data_path(&data_path).expect(&format!("Failed to clear data_path '{}' on startup", data_path));
+    clear_data_path(&data_path).unwrap_or_else(|_| panic!("Failed to clear data_path '{}' on startup", data_path));
     // Schedule clear_data_path job (every day at midnight)
     let scheduler = Arc::new(Mutex::new(JobScheduler::new()));
     let dp = data_path.clone();
