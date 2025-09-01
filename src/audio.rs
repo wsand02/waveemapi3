@@ -18,7 +18,7 @@ pub fn wav_decode<R: Read>(
     let channels = reader.spec().channels as usize;
     let bit_depth = reader.spec().bits_per_sample;
     if channels != 1 && channels != 2 {
-        return Err(WaveemapiError::HoundError(hound::Error::Unsupported));
+        return Err(WaveemapiError::Hound(hound::Error::Unsupported));
     }
     let sample_rate = reader.spec().sample_rate;
 
@@ -29,16 +29,14 @@ pub fn wav_decode<R: Read>(
             1.0 / 32768.0,
             sample_rate,
             data_path,
-        )
-        .map_err(|e| e)?,
+        )?,
         24 => process_samples(
             reader.samples::<i32>(),
             channels,
             1.0 / 8388608.0,
             sample_rate,
             data_path,
-        )
-        .map_err(|e| e)?,
+        )?,
         32 => match reader.spec().sample_format {
             hound::SampleFormat::Float => process_samples(
                 reader.samples::<f32>(),
@@ -46,18 +44,16 @@ pub fn wav_decode<R: Read>(
                 1.0,
                 sample_rate,
                 data_path,
-            )
-            .map_err(|e| e)?,
+            )?,
             hound::SampleFormat::Int => process_samples(
                 reader.samples::<i32>(),
                 channels,
-                1.0 / 2147483648.0 as f32,
+                1.0 / 2147483648.0_f32,
                 sample_rate,
                 data_path,
-            )
-            .map_err(|e| e)?,
+            )?,
         },
-        _ => return Err(WaveemapiError::HoundError(hound::Error::Unsupported)),
+        _ => return Err(WaveemapiError::Hound(hound::Error::Unsupported)),
     };
     Ok(decode_result)
 }
@@ -73,31 +69,29 @@ where
     f64: From<T>,
 {
     let mut mp3_encoder =
-        Builder::new().ok_or_else(|| WaveemapiError::BuildError(BuildError::Generic))?;
+        Builder::new().ok_or_else(|| WaveemapiError::Build(BuildError::Generic))?;
     mp3_encoder
         .set_num_channels(channels as u8)
         .expect("set channels");
     mp3_encoder
         .set_sample_rate(sample_rate)
-        .map_err(|e| WaveemapiError::BuildError(e))?;
+        .map_err(WaveemapiError::Build)?;
     mp3_encoder
         .set_brate(mp3lame_encoder::Bitrate::Kbps128)
-        .map_err(|e| WaveemapiError::BuildError(e))?;
+        .map_err(WaveemapiError::Build)?;
     mp3_encoder
         .set_quality(mp3lame_encoder::Quality::Decent)
-        .map_err(|e| WaveemapiError::BuildError(e))?;
-    let mut mp3_encoder = mp3_encoder
-        .build()
-        .map_err(|e| WaveemapiError::BuildError(e))?;
+        .map_err(WaveemapiError::Build)?;
+    let mut mp3_encoder = mp3_encoder.build().map_err(WaveemapiError::Build)?;
     let ppath = mp3_path(data_path);
-    let file = File::create(&ppath).map_err(|e| WaveemapiError::IoError(e))?;
+    let file = File::create(&ppath).map_err(WaveemapiError::Io)?;
     let mut bwriter = BufWriter::new(file);
     let mut left = Vec::with_capacity(CHUNK_SIZE);
     let mut right = Vec::with_capacity(CHUNK_SIZE);
     let is_stereo = channels == 2;
 
     for (idx, sample) in samples.enumerate() {
-        let sample_val = sample.map_err(|e| WaveemapiError::HoundError(e))?;
+        let sample_val = sample.map_err(WaveemapiError::Hound)?;
         let srb: f64 = sample_val.into();
         let sr: f32 = srb as f32;
         let s = sr * scale;
@@ -134,17 +128,15 @@ where
             left.clear();
             right.clear();
         }
-    } else {
-        if !left.is_empty() {
-            encode_mono(&left, &mut bwriter, &mut mp3_encoder)?;
-            left.clear();
-        }
+    } else if !left.is_empty() {
+        encode_mono(&left, &mut bwriter, &mut mp3_encoder)?;
+        left.clear();
     }
     let num_frames = cmp::max(left.len(), right.len());
     let mut tail = Vec::with_capacity(mp3lame_encoder::max_required_buffer_size(num_frames));
     let flushed = mp3_encoder.flush_to_vec::<FlushNoGap>(&mut tail)?;
     if flushed > 0 {
-        bwriter.write_all(&tail).map_err(WaveemapiError::IoError)?;
+        bwriter.write_all(&tail).map_err(WaveemapiError::Io)?;
     }
 
     bwriter.flush()?;
@@ -157,10 +149,7 @@ fn encode_dual(
     bwriter: &mut BufWriter<File>,
     encoder: &mut Encoder,
 ) -> Result<(), WaveemapiError> {
-    let chunk = DualPcm {
-        left: left,
-        right: right,
-    };
+    let chunk = DualPcm { left, right };
     let num_frames = cmp::max(left.len(), right.len());
     let mut mp3_out_buffer =
         Vec::with_capacity(mp3lame_encoder::max_required_buffer_size(num_frames));

@@ -1,46 +1,45 @@
 use core::fmt;
-use hound::Error as HoundError;
-use mp3lame_encoder::{BuildError, EncodeError};
-use rocket::{http::Status, response::Responder, serde::json::Json, tokio::task::JoinError};
+
+use rocket::{http::Status, response::Responder, serde::json::Json};
 
 use crate::api::DefaultErrorResp;
 
 #[derive(Debug)]
 pub enum WaveemapiError {
-    EncoderError(EncodeError),
-    BuildError(BuildError),
-    HoundError(HoundError),
-    IoError(std::io::Error),
-    JoinError(JoinError),
+    Encoder(mp3lame_encoder::EncodeError),
+    Build(mp3lame_encoder::BuildError),
+    Hound(hound::Error),
+    Io(std::io::Error),
+    Join(rocket::tokio::task::JoinError),
 }
 
 impl fmt::Display for WaveemapiError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            WaveemapiError::EncoderError(e) => write!(f, "Encoder error: {}", e),
-            WaveemapiError::BuildError(e) => write!(f, "Build error: {}", e),
-            WaveemapiError::HoundError(e) => write!(f, "Wav error: {}", e),
-            WaveemapiError::IoError(e) => write!(f, "IO error: {}", e),
-            WaveemapiError::JoinError(e) => write!(f, "Join error: {}", e),
+            WaveemapiError::Encoder(e) => write!(f, "Encoder error: {}", e),
+            WaveemapiError::Build(e) => write!(f, "Build error: {}", e),
+            WaveemapiError::Hound(e) => write!(f, "Wav error: {}", e),
+            WaveemapiError::Io(e) => write!(f, "IO error: {}", e),
+            WaveemapiError::Join(e) => write!(f, "Join error: {}", e),
         }
     }
 }
 
-impl From<JoinError> for WaveemapiError {
-    fn from(value: JoinError) -> Self {
-        WaveemapiError::JoinError(value)
+impl From<rocket::tokio::task::JoinError> for WaveemapiError {
+    fn from(value: rocket::tokio::task::JoinError) -> Self {
+        WaveemapiError::Join(value)
     }
 }
 
 impl From<std::io::Error> for WaveemapiError {
     fn from(value: std::io::Error) -> Self {
-        WaveemapiError::IoError(value)
+        WaveemapiError::Io(value)
     }
 }
 
-impl From<EncodeError> for WaveemapiError {
-    fn from(value: EncodeError) -> Self {
-        WaveemapiError::EncoderError(value)
+impl From<mp3lame_encoder::EncodeError> for WaveemapiError {
+    fn from(value: mp3lame_encoder::EncodeError) -> Self {
+        WaveemapiError::Encoder(value)
     }
 }
 
@@ -48,9 +47,9 @@ impl From<EncodeError> for WaveemapiError {
 impl<'r> Responder<'r, 'static> for WaveemapiError {
     fn respond_to(self, request: &'r rocket::Request<'_>) -> rocket::response::Result<'static> {
         let status = match self {
-            WaveemapiError::HoundError(_) => Status::BadRequest,
-            WaveemapiError::IoError(_) => Status::InternalServerError,
-            WaveemapiError::BuildError(_) => Status::BadRequest,
+            WaveemapiError::Hound(_) => Status::BadRequest,
+            WaveemapiError::Io(_) => Status::InternalServerError,
+            WaveemapiError::Build(_) => Status::BadRequest,
             _ => Status::InternalServerError,
         };
         let error_resp = DefaultErrorResp {

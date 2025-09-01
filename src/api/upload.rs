@@ -31,15 +31,13 @@ async fn upload(
     upload.wav.persist_to(&uploadp).await?;
     let uploadpc = uploadp.clone();
     let resultp = tokio::task::spawn_blocking(move || {
-        let reader = hound::WavReader::open(&uploadp).map_err(|e| WaveemapiError::HoundError(e))?;
+        let reader = hound::WavReader::open(&uploadp).map_err(WaveemapiError::Hound)?;
         wav_decode(reader, &data_path)
     })
     .await?;
     fs::remove_file(&uploadpc).await?; // remove wav after mp3 encode
     match resultp {
-        Ok(val) => NamedFile::open(&val)
-            .await
-            .map_err(|e| WaveemapiError::IoError(e)),
+        Ok(val) => NamedFile::open(&val).await.map_err(WaveemapiError::Io),
         Err(e) => Err(e),
     }
 }
