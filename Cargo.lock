@@ -1608,7 +1608,7 @@ dependencies = [
 
 [[package]]
 name = "waveemapi3"
-version = "1.1.1"
+version = "1.1.2"
 dependencies = [
  "figment",
  "hound",
