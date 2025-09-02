@@ -3,6 +3,7 @@ services:
     image: wsand02/waveemapi3:latest
     restart: always
     container_name: waveemapi3
+    ports:
+      - "8080:8080"
     environment:
-      - AUTH_TOKENS:
-          - "supersecretsigma"
+      WAVEEMAPI_AUTH_TOKENS: '["supersecretsigma"]'
