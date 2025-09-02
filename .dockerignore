@@ -1,0 +1,13 @@
+target
+.cargo
+**/*.sh
+**/*.tar.gz
+tests
+.DS_STORE
+Rocket.toml
+profile.json.gz
+waveemapi.toml
+uploads
+data
+!tests/data
+lcov.info
