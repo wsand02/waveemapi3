@@ -7,3 +7,4 @@ uploads
 data
 !tests/data
 lcov.info
+docker-compose.yml

@@ -1,0 +1,8 @@
+services:
+  waveemapi3:
+    image: wsand02/waveemapi3:latest
+    restart: always
+    container_name: waveemapi3
+    environment:
+      - AUTH_TOKENS:
+          - "supersecretsigma"
