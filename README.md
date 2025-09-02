@@ -48,8 +48,6 @@ Verify the service is running:
 docker-compose ps
 ```
 
----
-
 ## API Routes
 
 ### `(GET) /api/status`
@@ -80,8 +78,6 @@ curl -X POST \
 ```
 
 Returns a raw MP3 file, or a multitude of errors.
-
----
 
 ## Configuration
 
