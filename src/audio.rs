@@ -121,8 +121,8 @@ where
                     &mut bwriter,
                     &mut mp3_encoder,
                 )?;
-                left.drain(..CHUNK_SIZE);
-                right.drain(..CHUNK_SIZE);
+                left.clear();
+                right.clear();
             }
         } else {
             left.push(s);
