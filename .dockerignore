@@ -1,4 +1,8 @@
-/target
+target
+.cargo
+**/*.sh
+**/*.tar.gz
+tests
 .DS_STORE
 Rocket.toml
 profile.json.gz
