@@ -5,35 +5,6 @@ use rocket::{http::Status, response::Responder, serde::json::Json};
 use crate::api::DefaultErrorResp;
 
 #[derive(Debug)]
-pub enum WaveemapiUserError {
-    Encoding,
-    Decoding,
-    Io,
-}
-
-impl fmt::Display for WaveemapiUserError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            WaveemapiUserError::Encoding => write!(f, "Encoding error"),
-            WaveemapiUserError::Decoding => write!(f, "Decoding error"),
-            WaveemapiUserError::Io => write!(f, "IO error"),
-        }
-    }
-}
-
-impl From<WaveemapiError> for WaveemapiUserError {
-    fn from(value: WaveemapiError) -> Self {
-        match value {
-            WaveemapiError::Encoder(_) => WaveemapiUserError::Encoding,
-            WaveemapiError::Hound(_) => WaveemapiUserError::Decoding,
-            WaveemapiError::Io(_) => WaveemapiUserError::Io,
-            WaveemapiError::Id3Tag(_) => WaveemapiUserError::Encoding,
-            _ => WaveemapiUserError::Io, // default to IoError for other cases
-        }
-    }
-}
-
-#[derive(Debug)]
 pub enum WaveemapiError {
     Encoder(mp3lame_encoder::EncodeError),
     Build(mp3lame_encoder::BuildError),
