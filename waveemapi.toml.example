@@ -4,3 +4,5 @@ auth_tokens=[
   "obamg"
 ]
 auth_enabled = true
+cleanup_interval_minutes = 10
+file_expiry_minutes = 15
