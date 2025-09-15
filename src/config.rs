@@ -7,6 +7,8 @@ pub struct Config {
     pub auth_tokens: Vec<String>,
     pub auth_enabled: bool,
     pub data_path: String,
+    pub cleanup_interval_minutes: u64,
+    pub file_expiry_minutes: u64,
 }
 
 impl Default for Config {
@@ -15,6 +17,8 @@ impl Default for Config {
             auth_tokens: vec![],
             auth_enabled: true,
             data_path: ROOT.to_string(),
+            cleanup_interval_minutes: 15,
+            file_expiry_minutes: 60,
         }
     }
 }
@@ -29,5 +33,7 @@ mod tests {
         assert_eq!(config.data_path, ROOT);
         assert!(config.auth_enabled);
         assert!(config.auth_tokens.is_empty());
+        assert!(config.cleanup_interval_minutes == 15);
+        assert!(config.file_expiry_minutes == 60);
     }
 }

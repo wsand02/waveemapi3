@@ -66,9 +66,14 @@ impl<'r> Responder<'r, 'static> for WaveemapiError {
             WaveemapiError::Build(_) => Status::BadRequest,
             _ => Status::InternalServerError,
         };
-        let error_resp = DefaultErrorResp {
-            error: self.to_string(),
+        let message = match self {
+            WaveemapiError::Encoder(_) => "Failed to encode MP3".to_string(),
+            WaveemapiError::Hound(_) => "Invalid WAV file".to_string(),
+            WaveemapiError::Io(_) => "Internal server error".to_string(),
+            WaveemapiError::Build(_) => "Failed to build encoder".to_string(),
+            _ => "An error occurred".to_string(),
         };
+        let error_resp = DefaultErrorResp { error: message };
         Json(error_resp).respond_to(request).map(|mut response| {
             response.set_status(status);
             response

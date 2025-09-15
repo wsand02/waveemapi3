@@ -99,16 +99,24 @@ auth_tokens = [
 
 # Enable or disable authentication. Set to `false` to bypass authentication.
 auth_enabled = true
+
+# How often the data folder should be cleaned.
+cleanup_interval_minutes = 5
+
+# Only delete files older than this during cleanup.
+file_expiry_minutes = 10
 ```
 
 ### Environment Variables
 
 You can override the configuration using environment variables. The following variables are supported:
 
-- `WAVEEMAPI_DATA_PATH`: Path to the directory where data files are stored.
-- `WAVEEMAPI_AUTH_ENABLED`: Set to `true` or `false` to enable or disable authentication.
-- `WAVEEMAPI_PROFILE`: Specify the configuration profile to use (e.g., `default`).
-- `WAVEEMAPI_AUTH_TOKENS`: A list of API tokens.
++ `WAVEEMAPI_DATA_PATH`: Path to the directory where data files are stored.
++ `WAVEEMAPI_AUTH_ENABLED`: Set to `true` or `false` to enable or disable authentication.
++ `WAVEEMAPI_PROFILE`: Specify the configuration profile to use (e.g., `default`).
++ `WAVEEMAPI_AUTH_TOKENS`: A list of API tokens.
++ `WAVEEMAPI_CLEANUP_INTERVAL_MINUTES`: How often the data folder should be cleaned.
++ `WAVEEMAPI_FILE_EXPIRY_MINUTES`: How old the files deleted during cleanup have to be.
 
 #### Example:
 
