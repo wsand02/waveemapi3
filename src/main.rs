@@ -2,13 +2,10 @@ use figment::{
     Figment, Profile,
     providers::{Env, Format, Serialized, Toml},
 };
-use rocket::{data, fairing::AdHoc, tokio};
+use rocket::{fairing::AdHoc, tokio};
 use rocket_apitoken::ApiToken;
 
-use crate::helpers::clear_data_path;
-use job_scheduler_ng::{Job, JobScheduler, Schedule};
-use std::sync::{Arc, Mutex};
-use std::thread;
+use crate::helpers::{check_data_path, clear_data_path};
 use std::time::Duration;
 
 #[macro_use]
@@ -39,7 +36,8 @@ fn rocket() -> _ {
     let auth_tokens: Vec<String> = figment.extract_inner("auth_tokens").expect("auth_tokens");
     println!("Loaded {} auth_tokens", auth_tokens.len());
 
-    // Get data_path from config
+    let data_path: String = figment.extract_inner("data_path").expect("data_path");
+    check_data_path(&data_path).expect("data_path");
 
     rocket::custom(figment)
         .manage(ApiToken::new(auth_tokens, auth_enabled))
@@ -47,24 +45,36 @@ fn rocket() -> _ {
         .mount("/api/status", api::status_routes())
         .register("/api", api::catchers())
         .attach(AdHoc::config::<config::Config>())
-        .attach(AdHoc::on_liftoff("Cleanup Scheduler", |rocket| {
-            let figment = rocket.figment().clone();
+        .attach(AdHoc::on_liftoff("cleanup-scheduler", |rocket| {
             Box::pin(async move {
-                setup_cleanup_scheduler(&figment).await;
+                setup_cleanup_scheduler(rocket.figment());
             })
         }))
 }
 
-async fn setup_cleanup_scheduler(figment: &Figment) {
+fn setup_cleanup_scheduler(figment: &Figment) {
     let data_path: String = figment.extract_inner("data_path").expect("data_path");
-    let mut interval = tokio::time::interval(Duration::from_secs(60)); // 24 hours
-    loop {
-        interval.tick().await;
-        println!("Running scheduled cleanup of data path: {}", data_path);
-        if let Err(e) = clear_data_path(&data_path) {
-            eprintln!("Error during scheduled cleanup: {}", e);
-        } else {
-            println!("Scheduled cleanup completed successfully.");
+
+    let cleanup_interval_minutes: u64 = figment
+        .extract_inner("cleanup_interval_minutes")
+        .expect("cleanup_interval_minutes");
+    let cleanup_interval_seconds = cleanup_interval_minutes * 60;
+
+    let file_expiry_minutes: u64 = figment
+        .extract_inner("file_expiry_minutes")
+        .expect("file_expiry_minutes");
+    let file_expiry_seconds = file_expiry_minutes * 60;
+
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(cleanup_interval_seconds));
+        loop {
+            interval.tick().await;
+            println!("Running scheduled cleanup of data path: {}", data_path);
+            if let Err(e) = clear_data_path(&data_path, Duration::from_secs(file_expiry_seconds)) {
+                eprintln!("Error during scheduled cleanup: {}", e);
+            } else {
+                println!("Scheduled cleanup completed successfully.");
+            }
         }
-    }
+    });
 }
