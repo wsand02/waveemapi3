@@ -31,11 +31,12 @@ pub fn clear_data_path(data_path: &str, expiry: Duration) -> io::Result<()> {
         let metadata = entry.metadata()?;
         metadata.modified()?;
         let mut old_enough = true;
-        if let Ok(time) = metadata.modified() {
-            if SystemTime::now().duration_since(time).unwrap_or_default() < expiry {
-                old_enough = false;
-            }
+        if let Ok(time) = metadata.modified()
+            && SystemTime::now().duration_since(time).unwrap_or_default() < expiry
+        {
+            old_enough = false;
         }
+
         if let Some(fname) = path.file_name().and_then(|n| n.to_str()) {
             let is_wav = fname.ends_with(WAV_EXT);
             let is_mp3 = fname.ends_with(MP3_EXT);
