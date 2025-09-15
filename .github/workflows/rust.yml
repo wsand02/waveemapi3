@@ -18,5 +18,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: Build
       run: cargo build --verbose
+    - name: Create required test directories
+      run: mkdir -p data
     - name: Run tests
       run: cargo test --verbose
