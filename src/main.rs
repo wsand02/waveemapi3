@@ -2,7 +2,7 @@ use figment::{
     Figment, Profile,
     providers::{Env, Format, Serialized, Toml},
 };
-use rocket::fairing::AdHoc;
+use rocket::{data, fairing::AdHoc, tokio};
 use rocket_apitoken::ApiToken;
 
 use crate::helpers::clear_data_path;
@@ -40,27 +40,6 @@ fn rocket() -> _ {
     println!("Loaded {} auth_tokens", auth_tokens.len());
 
     // Get data_path from config
-    let data_path: String = figment.extract_inner("data_path").expect("data_path");
-    clear_data_path(&data_path).unwrap_or_else(|_| panic!("Failed to clear data_path '{}' on startup", data_path));
-    // Schedule clear_data_path job (every day at midnight)
-    let scheduler = Arc::new(Mutex::new(JobScheduler::new()));
-    let dp = data_path.clone();
-    {
-        let mut sched = scheduler.lock().unwrap();
-        sched.add(Job::new(
-            "0 0 0 * * *".parse::<Schedule>().unwrap(),
-            move || {
-                let _ = clear_data_path(&dp);
-            },
-        ));
-    }
-    let scheduler_clone = Arc::clone(&scheduler);
-    thread::spawn(move || {
-        loop {
-            scheduler_clone.lock().unwrap().tick();
-            thread::sleep(Duration::from_secs(60));
-        }
-    });
 
     rocket::custom(figment)
         .manage(ApiToken::new(auth_tokens, auth_enabled))
@@ -68,4 +47,24 @@ fn rocket() -> _ {
         .mount("/api/status", api::status_routes())
         .register("/api", api::catchers())
         .attach(AdHoc::config::<config::Config>())
+        .attach(AdHoc::on_liftoff("Cleanup Scheduler", |rocket| {
+            let figment = rocket.figment().clone();
+            Box::pin(async move {
+                setup_cleanup_scheduler(&figment).await;
+            })
+        }))
+}
+
+async fn setup_cleanup_scheduler(figment: &Figment) {
+    let data_path: String = figment.extract_inner("data_path").expect("data_path");
+    let mut interval = tokio::time::interval(Duration::from_secs(60)); // 24 hours
+    loop {
+        interval.tick().await;
+        println!("Running scheduled cleanup of data path: {}", data_path);
+        if let Err(e) = clear_data_path(&data_path) {
+            eprintln!("Error during scheduled cleanup: {}", e);
+        } else {
+            println!("Scheduled cleanup completed successfully.");
+        }
+    }
 }

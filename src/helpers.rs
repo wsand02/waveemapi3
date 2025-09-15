@@ -9,12 +9,21 @@ const MP3_EXT: &str = ".mp3";
 const WAV_EXT: &str = ".wav";
 const FNAME_LEN: usize = 40; // 36 (uuid) + 4 (.mp3)
 
-/// Deletes all .wav and .mp3 files in `data_path` that are exactly 40 characters long (including extension).
-pub fn clear_data_path(data_path: &str) -> io::Result<()> {
+pub fn check_data_path(data_path: &str) -> io::Result<()> {
     let dir = Path::new(data_path);
     if !dir.is_dir() {
-        return Ok(());
+        return Err(io::Error::new(
+            io::ErrorKind::NotADirectory,
+            format!("Data path '{}' is not a directory", data_path),
+        ));
     }
+    Ok(())
+}
+
+/// Deletes all .wav and .mp3 files in `data_path` that are exactly 40 characters long (including extension).
+pub fn clear_data_path(data_path: &str) -> io::Result<()> {
+    check_data_path(data_path)?;
+    let dir = Path::new(data_path);
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
@@ -140,7 +149,7 @@ mod tests {
         if !is_unix && !cfg!(windows) {
             panic!("Unsupported OS, giving up...");
         }
-        
+
         let data_path: &str = if is_unix {
             "/tmp/test"
         } else {
@@ -152,11 +161,13 @@ mod tests {
         // Test that the generated paths are valid Path objects
         let wav_path_obj = Path::new(&wav_result);
         let mp3_path_obj = Path::new(&mp3_result);
-        println!("{}", wav_path_obj.parent().unwrap().to_string_lossy().as_ref());
+        println!(
+            "{}",
+            wav_path_obj.parent().unwrap().to_string_lossy().as_ref()
+        );
         assert!(wav_path_obj.is_absolute());
         assert!(mp3_path_obj.is_absolute());
 
-        
         // Test that parent directory is as expected
         assert_eq!(wav_path_obj.parent().unwrap(), Path::new(data_path));
         assert_eq!(mp3_path_obj.parent().unwrap(), Path::new(data_path));

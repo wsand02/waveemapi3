@@ -9,7 +9,7 @@ use rocket_apitoken::Authorized;
 use crate::audio::wav_decode;
 use crate::config::Config;
 use crate::error::WaveemapiError;
-use crate::helpers::wav_path;
+use crate::helpers::{check_data_path, wav_path};
 
 pub fn routes() -> Vec<rocket::Route> {
     routes![upload]
@@ -27,6 +27,7 @@ async fn upload(
     config: &State<Config>,
 ) -> Result<NamedFile, WaveemapiError> {
     let data_path = config.data_path.clone();
+    check_data_path(&data_path)?;
     let uploadp = wav_path(&data_path);
     upload.wav.persist_to(&uploadp).await?;
     let uploadpc = uploadp.clone();
